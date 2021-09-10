@@ -1,0 +1,463 @@
+/** @OnlyCurrentDoc */
+/*** 
+/*** HC Inventory Management
+/*** by Árpád B. Mózes
+/*** email: mozes.arpad.b at gmail.com
+/*** 2020. 10. 28. (v1.1)
+/***
+/*** The scripts below manage the inventory of the High Care cosmetic products used and distributed by our
+/*** beauty salons in Sárospatak and Sátoraljaújhely, Hungary. It helps our employees to track the actual
+/*** stock and sells by few clicks and type-ins, and the owner to supervise it.
+/***
+/*** The employees mainly interact with the interface called 'Intéző'. From there they can select an item
+/*** under a category (after selecting category and pressing the Filter button - 'Szűrő') and sell 'Elad',
+/*** move between commercial and consumable stock ('Lakossági' and 'Kabin', respectively), move between
+/*** the two salons (export icon, import option) and register consumes. For the registry of new items they
+/*** use the 'List view' where they get an empty copy by click and fill it with the number of received
+/*** items. To avoid overwriting in the list view, which is used as the actual inventory database itself
+/*** it was mirrored from a hidden 'admin' list view, which makes the search option unusable for the
+/*** employees, but avoids mistakes.
+/***
+/*** The accountability is guaranteed by the Activity log (Eseménynapló) which logs every modification of
+/*** the inventory and sends a copy to the administrator. The list of ordered and registered items is also
+/*** sent to the owner, who checks if it is the same as on the invoice and from then it is the responsibi-
+/*** lity of the workers, too keep the inventory accountable. In the Activity log the history of any
+/*** product is easily accessible. New items or categories can be added by the trusted users (owner and
+/*** admin). The sells are also registered on a separate page since the employees mark the sells with
+/*** their name (or mark it as a commission-free sell), this way commissions are also registered and can
+/*** be supervised.
+/***
+/*** Further improvement could be done on fixing. Though users can take back their actions using the built
+/*** in option mistakes recognised later can only be fixed by admin users and have no mark in the activity
+/*** log as they are fixed by hand. The problem is the possible data loss by overwriting or accountability
+/*** if the option is accessible for employees. Hope to be solved in v1.1.
+/****/
+
+
+///// New category /////
+
+function UjKategoria() {
+  var spreadsheet = SpreadsheetApp.getActive();
+  var categoryAbove = spreadsheet.getRange('C4:D4').getValue();
+  var sheet = spreadsheet.getSheetByName('Segédmunkalap (nem szerkeszthető)');
+  var lastColumn = sheet.getLastColumn();
+  var lastCategory = sheet.getRange(1, lastColumn).getValue();
+  
+  if (categoryAbove != lastCategory){ // Utolsó után nem lehet beszúrni
+    var name = Browser.inputBox('Új termékkategória beszúrása a kijelölt kategória után. Add meg az új kategória nevét:', Browser.Buttons.OK_CANCEL).toUpperCase();
+    
+    if (name != "CANCEL"){
+      
+      // Új oszlop beszúrása a segédmunkalapba és képletek újrakalibrálása
+      var namechart = sheet.getDataRange().getValues();
+      var col = namechart[0].indexOf(categoryAbove);
+      var categoryBelow = namechart[0][col + 1];
+      
+      sheet.insertColumns(col + 2, 1);
+      sheet.getRange(1, col + 2).setValue(name);
+      sheet.getRange(2, col + 3).autoFill(sheet.getRange(2, col + 1, 1, 3), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+      sheet.getRange(2, col + 1, 1, 2).autoFill(sheet.getRange(2, col + 1, 20, 2), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+      
+      // Új sor a terméklistába a megfelelő helyre
+      sheet = spreadsheet.getSheetByName('Terméklista admin');
+      var data = spreadsheet.getRange('\'Terméklista admin\'!K:K').getValues();
+      var row = 0;
+      while ( data[row] && data[row][0] !== categoryBelow ) {row++;}
+      sheet.insertRowAfter(row);
+      
+      // Banding helyreállíátsa (új sor kivétele belőle)
+      var banding = sheet.getRange(row, 1).getBandings()[0];
+      var numRows = banding.getRange().getNumRows();
+      banding.setRange(sheet.getRange(row - numRows + 2, 1, numRows - 1, 11))
+      .setHeaderRowColor('#78909c')
+      .setFirstRowColor('#ffffff')
+      .setSecondRowColor('#ebeff1')
+      .setFooterRowColor(null);
+      
+      // Új sor saját bandingjének beállítása
+      sheet.getRange(row + 1, 1, 1, 11).applyRowBanding(SpreadsheetApp.BandingTheme.GREY, true, false);
+      sheet.getRange(row + 1, 1).setValue(name).setFontColor('#ffffff');
+      
+      // Utolsó oszlopbeli képlet beállítása
+      sheet.getRange(row, 11).autoFill(sheet.getRange(row, 11, 2), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+      
+      // Felhasználói terméklista újraformázása
+      var sheetUI = spreadsheet.getSheetByName('Terméklista');
+      sheetUI.getRange(6, 1).autoFill(sheetUI.getRange(6, 1, 1, 11), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+      sheetUI.getRange(6, 1, 1, 11).autoFill(sheetUI.getRange(6, 1, 195, 11), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+      sheetUI.getRange('A6:K200').clearFormat();
+      sheet.getRange('A6:K200').copyTo(sheetUI.getRange('A6:K200'), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+      
+      // Naplózás
+      sheet = spreadsheet.getSheetByName('Eseménynapló (nem szerkeszthető)');
+      data = sheet.getDataRange().getValues();
+      row = 0;
+      while ( data[row] && data[row][0] !== "" ) {row++;}
+      sheet.getRange(row + 1, data[0].indexOf("Időbélyeg") + 1).setValue(Utilities.formatDate(new Date(), "GMT+1", "yyyy. MM. dd. HH:mm:ss"));
+      sheet.getRange(row + 1, data[0].indexOf("Esemény") + 1).setValue("Új kategória létrehozva: " + name
+                                                                       + " (" + Session.getEffectiveUser().getEmail() + " által)");
+      EsemenynaploMentese();
+      
+      // Befejező üzenet
+      Browser.msgBox("Új kategória", name + " kategória létrehozva. Termékeket ugyanígy az Intézőben adhatsz hozzá.", Browser.Buttons.OK);
+    }
+  }
+  else {
+    Browser.msgBox("Hiba", "Az utolsó kategória után nem lehet újat beszúrni. Válassz másik kategóriát!", Browser.Buttons.OK);
+  }
+};
+
+
+///// New product /////
+
+function UjTermek() {
+  var spreadsheet = SpreadsheetApp.getActive();
+  var sheet = spreadsheet.getSheetByName('Terméklista admin');
+  var category = spreadsheet.getRange('C4:D4').getValue();
+  
+  var name = Browser.inputBox('Új termék', 'Add meg az új termék nevét (kiszerelés nélkül):', Browser.Buttons.OK_CANCEL);
+  if (name != "cancel" && name != "") {
+    var packaging = Browser.inputBox('Új termék', 'Add meg az új termék kiszerelését:', Browser.Buttons.OK_CANCEL);
+    if (packaging != "cancel" && packaging != "") {
+      
+      var lakMinSp = Browser.inputBox('Új termék', 'Add meg a sárospataki minimum lakossági készletet:', Browser.Buttons.OK);
+      var kabMinSp = Browser.inputBox('Új termék', 'Add meg a sárospataki minimum kabin készletet:', Browser.Buttons.OK);
+      var lakMinSu = Browser.inputBox('Új termék', 'Add meg a sátoraljaújhelyi minimum lakossági készletet:', Browser.Buttons.OK);
+      var kabMinSu = Browser.inputBox('Új termék', 'Add meg a sátoraljaújhelyi minimum kabin készletet:', Browser.Buttons.OK);
+      
+      // Új sor beszúrása a megfelelő helyre ha még lehet és feltöltés az adatokkal + szegélyek
+      var data = sheet.getRange('K:K').getValues();
+      var row = 0;
+      while ( data[row] && data[row][0] !== category ) {row++;}
+      var numRows = sheet.getRange(row + 1, 1).getBandings()[0].getRange().getNumRows();
+      if (numRows < 21) {
+        sheet.insertRowAfter(row + numRows);
+        var indexOfNewRow = row + numRows + 1;
+        sheet.getRange(indexOfNewRow, 1).setValue(name).setFontColor(null);
+        sheet.getRange(indexOfNewRow, 2).setValue(packaging).setBorder(null, null, null, true, null, null, '#000000', SpreadsheetApp.BorderStyle.SOLID);
+        sheet.getRange(indexOfNewRow, 4).setValue(lakMinSp);
+        sheet.getRange(indexOfNewRow, 6).setValue(kabMinSp).setBorder(null, null, null, true, null, null, '#000000', SpreadsheetApp.BorderStyle.SOLID);
+        sheet.getRange(indexOfNewRow, 8).setValue(lakMinSu);
+        sheet.getRange(indexOfNewRow, 10).setValue(kabMinSu);
+        
+        // Utolsó oszlopbeli képlet beállítása
+        sheet.getRange(indexOfNewRow - 1, 11).autoFill(sheet.getRange(indexOfNewRow - 1, 11, 2), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+        
+        // Felhasználói terméklista újraformázása
+        var sheetUI = spreadsheet.getSheetByName('Terméklista');
+        var lastRow = sheet.getLastRow() + 1;
+        sheetUI.getRange(6, 1).autoFill(sheetUI.getRange(6, 1, 1, 11), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+        sheetUI.getRange(6, 1, 1, 11).autoFill(sheetUI.getRange(6, 1, lastRow - 5, 11), SpreadsheetApp.AutoFillSeries.DEFAULT_SERIES);
+        sheetUI.getRange('A6:K200').clearFormat();
+        sheet.getRange('A6:K200').copyTo(sheetUI.getRange('A6:K200'), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+        
+        // Naplózás
+        sheet = spreadsheet.getSheetByName('Eseménynapló (nem szerkeszthető)');
+        data = sheet.getDataRange().getValues();
+        row = 0;
+        while ( data[row] && data[row][0] !== "" ) {row++;}
+        sheet.getRange(row + 1, data[0].indexOf("Időbélyeg") + 1).setValue(Utilities.formatDate(new Date(), "GMT+1", "yyyy. MM. dd. HH:mm:ss"));
+        sheet.getRange(row + 1, data[0].indexOf("Esemény") + 1).setValue(name + " termék létrehozva a(z) " + category
+                                                                         + " kategóriában (" + Session.getEffectiveUser().getEmail() + " által)");
+        EsemenynaploMentese();
+        
+        // Befejező üzenet
+        Browser.msgBox("Új termék", name + " " + packaging + " hozzáadva a(z) " + category + " kategóriához.", Browser.Buttons.OK);
+      }
+      else {
+        Browser.msgBox("Hiba", "Kategória megtelt! (max 20 termék)", Browser.Buttons.OK); 
+      }
+    }
+    else if (packaging == "") {Browser.msgBox("Hiba", "Nem adtál meg kiszerelést!", Browser.Buttons.OK);
+                              }
+  }
+  else if (name == "") {Browser.msgBox("Hiba", "Nem adtál meg terméknevet!", Browser.Buttons.OK);}
+};
+
+
+///// Adding stock to Sp /////
+
+function SpBevetelezes() {
+  // Megjeleníti a Terméklista admin egy frissített másolatát, akt. készletek nélkül
+  // SzuroTorlese();
+  var spreadsheet = SpreadsheetApp.getActive();
+  var sheetInv = spreadsheet.getSheetByName('Terméklista admin');
+  var sheetReg = spreadsheet.getSheetByName('Bevételezés Sárospatak');
+  var bandings = sheetInv.getRange('A6:K200').getBandings();
+  
+  // A régi sávozások törlése
+  var oldBandings = sheetReg.getRange('A6:K200').getBandings();
+  oldBandings.forEach(function(element)
+                   {element.remove();});
+  
+  // Az aktuális sávozások alkalmazása a bevételezési űrlapon
+  bandings.forEach(function(element)
+                   {element.copyTo(sheetReg.getRange(element.getRange().getA1Notation()));});
+  
+  // Formázás (nem sávozás) és nevek átmásolása, a fennmaradó oszlopok tisztítása (bentmaradt adatoktól)
+  sheetInv.getRange('A6:K200').copyTo(sheetReg.getRange('A6:K200'), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+  sheetInv.getRange('A6:B200').copyTo(sheetReg.getRange('A6:B200'), SpreadsheetApp.CopyPasteType.PASTE_VALUES, false);
+  sheetInv.getRange('K6:K200').copyTo(sheetReg.getRange('K6:K200'), SpreadsheetApp.CopyPasteType.PASTE_VALUES, false);
+  sheetReg.getRange('C6:J200').clear({contentsOnly: true, skipFilteredRows: false});
+  
+  sheetReg.getRange('A3').activate();
+};
+
+
+///// Finishing adding stock to Sp /////
+
+function SpBevetelezesKesz() {
+  var spreadsheet = SpreadsheetApp.getActive();
+  var sheetInv = spreadsheet.getSheetByName('Terméklista admin');
+  var sheetReg = spreadsheet.getSheetByName('Bevételezés Sárospatak');
+  var sheetLog = spreadsheet.getSheetByName('Eseménynapló (nem szerkeszthető)');
+  var data = sheetLog.getDataRange().getValues();
+  var reg, inv, value, product, row;
+  var logMessage = "Bevételezés történt: Sárospatak, " + Utilities.formatDate(new Date(), "GMT+1", "yyyy. MM. dd. HH:mm:ss") + '\n';
+  var logMessageCopy; // Hogy később lássuk történt e egyáltalán bevételezés
+  var isRelevant = false; // Hogy csak akkor küldjünk emailt, ha történt
+  
+  // Lakossági bevételezése
+  reg = spreadsheet.getRange('\'Bevételezés Sárospatak\'!C6:C200').getValues();
+  inv = spreadsheet.getRange('\'Terméklista admin\'!C6:C200').getValues();
+  logMessage += '\n' + "Lakossági készlethez hozzáadva:" + '\n';
+  logMessageCopy = logMessage;
+  // Beírt számok hozzáadása az aktuálishoz (csak a kitöltött cellákra)
+  // és naplóbejegyzés készítése
+  for (var i = 0; i < inv.length; i++) {
+    if(reg[i] != "") {
+      // Hozzáadás
+      value = Number(inv[i]) + Number(reg[i]);
+      sheetInv.getRange(6 + i, 3).setValue(value);
+      // Naplózás
+      product = sheetReg.getRange(6 + i, 11).getValue();
+      data = sheetLog.getDataRange().getValues();
+      row = 0;
+      while ( data[row] && data[row][0] !== "" ) {row++;}
+      sheetLog.getRange(row + 1, data[0].indexOf("Időbélyeg") + 1).setValue(Utilities.formatDate(new Date(), "GMT+1", "yyyy. MM. dd. HH:mm:ss"));
+      sheetLog.getRange(row + 1, data[0].indexOf("Hely") + 1).setValue("Sárospatak");
+      sheetLog.getRange(row + 1, data[0].indexOf("Termék") + 1).setValue(product);
+      sheetLog.getRange(row + 1, data[0].indexOf("Esemény") + 1).setValue("Bevételezés");
+      sheetLog.getRange(row + 1, data[0].indexOf("Frissített lakossági készlet Sárospatak") + 1).setValue(value);
+      logMessage += '\n' + product + '\t' + reg[i] + " db";
+    }
+  }
+  if (logMessage != logMessageCopy) {isRelevant = true;}
+  
+  // Kabin bevételezése
+  reg = spreadsheet.getRange('\'Bevételezés Sárospatak\'!E6:E200').getValues();
+  inv = spreadsheet.getRange('\'Terméklista admin\'!E6:E200').getValues(); 
+  logMessage += '\n' + '\n' + "Kabin készlethez hozzáadva:" + '\n';
+  logMessageCopy = logMessage;
+  // Beírt számok hozzáadása az aktuálishoz (csak a kitöltött cellákra)
+  // és naplóbejegyzés készítése
+  for (var i = 0; i < inv.length; i++) {
+    if(reg[i] != "") {
+      // Hozzáadás
+      value = Number(inv[i]) + Number(reg[i]);
+      sheetInv.getRange(6 + i, 5).setValue(value);
+      // Naplózás
+      product = sheetReg.getRange(6 + i, 11).getValue();
+      data = sheetLog.getDataRange().getValues();
+      row = 0;
+      while ( data[row] && data[row][0] !== "" ) {row++;}
+      sheetLog.getRange(row + 1, data[0].indexOf("Időbélyeg") + 1).setValue(Utilities.formatDate(new Date(), "GMT+1", "yyyy. MM. dd. HH:mm:ss"));
+      sheetLog.getRange(row + 1, data[0].indexOf("Hely") + 1).setValue("Sárospatak");
+      sheetLog.getRange(row + 1, data[0].indexOf("Termék") + 1).setValue(product);
+      sheetLog.getRange(row + 1, data[0].indexOf("Esemény") + 1).setValue("Bevételezés");
+      sheetLog.getRange(row + 1, data[0].indexOf("Frissített kabin készlet Sárospatak") + 1).setValue(value);
+      logMessage += '\n' + product + '\t' + reg[i] + " db";
+    }
+  }
+  if (logMessage != logMessageCopy) {isRelevant = true;}
+  
+  // Befejezés
+  EsemenynaploMentese();
+  logMessage += '\n' + '\n' + "Ez egy automatikusan generált üzenet.";
+  if (isRelevant) {MailApp.sendEmail("dinabenekft@gmail.com", "HC bevételezés Sárospatak", logMessage);}
+  spreadsheet.getSheetByName('Terméklista').activate();
+  sheetReg.hideSheet();
+  Browser.msgBox("Bevételezés", "A bevételezés sikeresen lezárult.", Browser.Buttons.OK);
+};
+
+
+///// Cancel adding stock /////
+
+function BevetelezesMegse() {
+  var sheet = SpreadsheetApp.getActiveSheet().hideSheet();
+};
+
+
+///// Search /////
+
+function Kereses() {
+  // Szövegszűrő beállítása A3 alapján
+  var spreadsheet = SpreadsheetApp.getActive();
+  spreadsheet.getRange('A1').activate();
+  spreadsheet.getRange('A3').activate();
+  var wanted = spreadsheet.getActiveCell().getValue();
+  var criteria = SpreadsheetApp.newFilterCriteria()
+  .whenTextContains(wanted)
+  .build();
+  spreadsheet.getActiveSheet().getFilter().setColumnFilterCriteria(1, criteria);
+};
+
+
+///// Remove filter /////
+
+function SzuroTorlese() {
+  // Szűrő és A3 törlése
+  var spreadsheet = SpreadsheetApp.getActive();
+  spreadsheet.getRange('A3').activate();
+  spreadsheet.getActiveRangeList().clear({contentsOnly: true, skipFilteredRows: true});
+  var criteria = SpreadsheetApp.newFilterCriteria()
+  .build();
+  spreadsheet.getActiveSheet().getFilter().setColumnFilterCriteria(1, criteria);
+  spreadsheet.getRange('A3').activate();
+};
+
+
+///// Products submenu from selected category Sp /////
+
+function SpAlmenu() {
+  // A kategória alá tartozó nevek kiolvasása a Segédmunkalapból
+  var spreadsheet = SpreadsheetApp.getActive();
+  var category = spreadsheet.getRange('C4:D4').getValue();
+  var sheet = spreadsheet.getSheetByName('Segédmunkalap (nem szerkeszthető)');
+  var namechart = sheet.getDataRange().getValues();
+  col = namechart[0].indexOf(category);
+  
+  // Lenyíló listás adatellenőrzés létrehozása
+  spreadsheet.getRange('\'Intéző Sárospatak\'!C6:D6').setValue("");
+  spreadsheet.getRange('C6:D6').setDataValidation(SpreadsheetApp.newDataValidation()
+                                                  .setAllowInvalid(false)
+                                                  .requireValueInRange(sheet.getRange(2, col+1, 20, 1), true)
+                                                  .build());
+};
+
+
+///// Taking out from Sp/Lak /////
+
+function SpLakElvisz() {
+  var spreadsheet = SpreadsheetApp.getActive();
+  var product = spreadsheet.getRange('C6:D6').getValue();
+  if (product != "") {
+    var incharge = Browser.inputBox('Áru kivétele', 'Add meg a kivett termékért felelős személy nevét:', Browser.Buttons.OK_CANCEL);
+    var workers = ["Anna", "Árpi", "Enci", "Enikő", "Erika", "Flóra", "Heni", "Kitti", "cancel"];
+    while (workers.indexOf(incharge) < 0) {
+      Browser.msgBox("Hiba", "Helytelen név! " + '\n' + "A következők egyikét add meg: Anna, Árpi, Enci, Enikő, Erika, Flóra, Heni, Kitti", Browser.Buttons.OK);
+      incharge = Browser.inputBox('Áru kivétele', 'Add meg a kivett termékért felelős személy nevét:', Browser.Buttons.OK_CANCEL);
+    }
+    if (incharge != "cancel") {
+      // Levétel a terméklistáról
+      var sheet = spreadsheet.getSheetByName('Terméklista admin');
+      var data = spreadsheet.getRange('\'Terméklista admin\'!K:K').getValues();
+      var row = 0;
+      while ( data[row] && data[row][0] !== product ) {row++;}
+      var value = sheet.getRange(row + 1, 3).getValue();
+      value--;
+      sheet.getRange(row + 1, 3).setValue(value);
+      
+      // Hozzáadás az utazó termékek listájához
+      sheet = spreadsheet.getSheetByName('Utazó termékek (nem szerkeszthető)');
+      data = sheet.getDataRange().getValues();
+      row = 0;
+      while ( data[row] && data[row][0] !== "" ) {row++;}
+      sheet.getRange(row + 1, data[0].indexOf("Indulás ideje") + 1).setValue(Utilities.formatDate(new Date(), "GMT+1", "yyyy. MM. dd. HH:mm:ss"));
+      sheet.getRange(row + 1, data[0].indexOf("Indulás helye") + 1).setValue("Sárospatakról");
+      sheet.getRange(row + 1, data[0].indexOf("Termék") + 1).setValue(product);
+      sheet.getRange(row + 1, data[0].indexOf("Felelős") + 1).setValue(incharge);
+      
+      // Naplózás
+      sheet = spreadsheet.getSheetByName('Eseménynapló (nem szerkeszthető)');
+      data = sheet.getDataRange().getValues();
+      row = 0;
+      while ( data[row] && data[row][0] !== "" ) {row++;}
+      sheet.getRange(row + 1, data[0].indexOf("Időbélyeg") + 1).setValue(Utilities.formatDate(new Date(), "GMT+1", "yyyy. MM. dd. HH:mm:ss"));
+      sheet.getRange(row + 1, data[0].indexOf("Hely") + 1).setValue("Sárospatak");
+      sheet.getRange(row + 1, data[0].indexOf("Termék") + 1).setValue(product);
+      sheet.getRange(row + 1, data[0].indexOf("Esemény") + 1).setValue("Elvitel (" + incharge + ")");
+      sheet.getRange(row + 1, data[0].indexOf("Frissített lakossági készlet Sárospatak") + 1).setValue(value);
+      EsemenynaploMentese();
+      
+      // Befejező üzenet
+      Browser.msgBox("Termék kivéve", "A(z) " + product + " termék felkerült a szállítási listára (lásd: Érkeztetés)", Browser.Buttons.OK);
+    }
+  }
+};
+
+
+///// Sell at Sp /////
+
+function SpElad() {
+  var spreadsheet = SpreadsheetApp.getActive();
+  var product = spreadsheet.getRange('C6:D6').getValue();
+  if (product != "") {
+    var seller = spreadsheet.getRange('C11:D11').getValue();
+    var price = "";
+    while (price == "") {
+      price = Browser.inputBox('Eladás', "Add meg az eladási árat! " + product + " (" + seller + ") Csak számot írj be!", Browser.Buttons.OK_CANCEL);
+      if (price == "") {Browser.msgBox("Hiba", "Nem adtál meg árat!", Browser.Buttons.OK);}
+    }
+    if (price != "cancel") {
+      var sheet = spreadsheet.getSheetByName('Terméklista admin');
+      var data = spreadsheet.getRange('\'Terméklista admin\'!K:K').getValues();
+      
+      // Termék kivétele lakosságiból
+      var row = 0;
+      while ( data[row] && data[row][0] !== product ) {row++;}
+      var value = sheet.getRange(row+1, 3).getValue();
+      value--;
+      sheet.getRange(row + 1, 3).setValue(value);
+      
+      // Naplózás
+      sheet = spreadsheet.getSheetByName('Eseménynapló (nem szerkeszthető)');
+      data = sheet.getDataRange().getValues();
+      row = 0;
+      while ( data[row] && data[row][0] !== "" ) {row++;}
+      sheet.getRange(row + 1, data[0].indexOf("Időbélyeg") + 1).setValue(Utilities.formatDate(new Date(), "GMT+1", "yyyy. MM. dd. HH:mm:ss"));
+      sheet.getRange(row + 1, data[0].indexOf("Hely") + 1).setValue("Sárospatak");
+      sheet.getRange(row + 1, data[0].indexOf("Eladta") + 1).setValue(seller);
+      sheet.getRange(row + 1, data[0].indexOf("Ár") + 1).setValue(price);
+      sheet.getRange(row + 1, data[0].indexOf("Termék") + 1).setValue(product);
+      sheet.getRange(row + 1, data[0].indexOf("Esemény") + 1).setValue("Eladás");
+      sheet.getRange(row + 1, data[0].indexOf("Frissített lakossági készlet Sárospatak") + 1).setValue(value);
+      EsemenynaploMentese();
+      
+      // A nem jutalékmentesek rögzítése az eladási táblázatban
+      if (seller != "Jutalékmentes") {
+        sheet = spreadsheet.getSheetByName('Eladási táblázat (nem szerkeszthető)');
+        data = sheet.getDataRange().getValues();
+        row = 0;
+        while ( data[row] && data[row][0] !== "" ) {row++;}
+        sheet.getRange(row + 1, data[0].indexOf("Időbélyeg") + 1).setValue(Utilities.formatDate(new Date(), "GMT+1", "yyyy. MM. dd. HH:mm:ss"));
+        sheet.getRange(row + 1, data[0].indexOf("Hely") + 1).setValue("Sárospatak");
+        sheet.getRange(row + 1, data[0].indexOf("Termék") + 1).setValue(product);
+        sheet.getRange(row + 1, data[0].indexOf(seller) + 1).setValue(price);
+      }
+      
+      // Befejező üzenet
+      Browser.msgBox("Eladva", product + " lakossági készlet frissítve. Új érték: " + value, Browser.Buttons.OK);
+    }
+  }
+  else {Browser.msgBox("Hiba", "Előbb válassz ki egy terméket!", Browser.Buttons.OK);}
+};
+
+
+///// Save the log sheet /////
+
+function EsemenynaploMentese() {
+  // Url felépítése .tsv exporthoz
+  var spreadsheet = SpreadsheetApp.getActive();
+  var ssID = spreadsheet.getId();
+  var gID = spreadsheet.getSheetByName('Eseménynapló (nem szerkeszthető)').getSheetId();
+  var url = "https://docs.google.com/spreadsheets/d/" + ssID + "/export?format=tsv&gid=" + gID;
+  var params = {method:"GET",headers:{"authorization":"Bearer "+ ScriptApp.getOAuthToken()}};
+  // Létrehozás
+  var response = UrlFetchApp.fetch(url, params).getBlob();
+  // Saját példány mentése Drive-ra
+  if (DriveApp.getFoldersByName("Eseménynapló mentések").hasNext()) {DriveApp.getFoldersByName("Eseménynapló mentések").next().createFile(response);}
+  else {DriveApp.createFolder("Eseménynapló mentések").createFile(response);}
+  // Elküldés emailben
+  MailApp.sendEmail("arpadbenedekmozes@gmail.com", "Eseménynapló biztonsági mentés", url, {attachments: [response]});
+};
