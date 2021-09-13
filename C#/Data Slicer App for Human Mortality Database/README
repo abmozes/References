@@ -1,3 +1,6 @@
 For my bachelor thesis I used data from the Human Mortality Database (mortality.org).
+
 This is a simple application to separate the life tables into files of population size,
 death rates, etc. See the examples uploaded.
+
+This way it is easier to import and handle them in R Studio.
