@@ -1,7 +1,8 @@
 This folder contains some parts of my work in Access, made for our family business like
 - a picture about the connections of the database
 - SQL codes of a few Queries
-- a report printed to PDF (first page only, prices and names removed).
+- a report printed to PDF (first page only, prices and names removed)
+(diagrams are not public).
 
 The tanning beds in our tanning salons are operated via a specific software. This software
 saves the data of all the memberships and sales. I recreated the database for analysis and
