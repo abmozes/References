@@ -1,0 +1,5 @@
+SELECT Year([product_events]![createdate]) AS [Year], Month([product_events]![createdate]) AS [Month], Sum(product_events.sum_price) AS SumOfsum_price
+FROM product_events
+WHERE (((product_events.pg_id)<>6 And (product_events.pg_id)<>7 And (product_events.pg_id)<>11))
+GROUP BY Year([product_events]![createdate]), Month([product_events]![createdate])
+HAVING (((Sum(product_events.sum_price))>0));
