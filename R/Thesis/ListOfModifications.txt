@@ -1,0 +1,44 @@
+### The following modifications were done in the StMoMo package
+#
+## keywords to find the modification in the code marked by '...'
+#
+#
+#    StMoMo.R
+# function definition: list of links expanded: link = c("log", "logit", "cloglog", "logitP")
+# 'Construct the model formula/link' expanded
+# 'print.StMoMo' conditions expanded
+#
+#    fitStMoMo.R
+# data type (central/initial) 'warnings' updated
+# 'Set starting values' expanded
+# 'Fit using gnm' expanded
+# (both as "family = poisson(link = logitP(fitData$E))" for logit-Poisson)
+# 'Preparet the output' conditions expanded
+#
+#    fittedfitStMoMo.R
+# calculation of 'rates' expanded: invlogit for logitP and invcloglog for cloglog
+#
+#    internalUtils.R
+# added the definition of 'logitP' as in Currie(2016) App. 1.
+# added the definition of 'cloglog'
+# added the definition of 'invcloglog' used in fitted()
+#
+#    residualsfitStMoMo.R
+# computing residuals: conditions expanded ('object$model$link')
+#
+#    bootstrapfitStMoMo.R
+# 'Generate death samples' conditions expanded
+#
+#    standardModels.R
+# every model updated to have 'c("log", "logit", "cloglog", "logitP")' in definition
+#
+#    RHModel.R
+# model updated to have 'c("log", "logit", "cloglog", "logitP")' in definition
+# data type (central/initial) 'warnings' updated
+# 'Set starting values' conditions expanded
+# 'initialisation' conditions expanded
+# 'switch(object$link' occurences (6 of them, computing the denominator of each updating
+#    formula for the Newton-Raphson iterative procedure [Hunt & Villegas, 2015]) were
+#    expanded by copies for logitP and cloglog
+# 'update iteration' conditions expanded
+# 'Prepare output' conditions expanded
