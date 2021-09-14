@@ -1,0 +1,63 @@
+# # # # # # # # #  Hungary  # # # # # # # # #
+
+HUdata <- hmd.mx(country = "HUN", username = "mozesarpi11@gmail.com", password = "ob8YjY4_ji;5_K3H?hd_'dY@", label = "Hungary")
+
+HUFemaleData <- StMoMoData(HUdata, series = "female")
+HUMaleData <- StMoMoData(HUdata, series = "male")
+HUTotalData <- StMoMoData(HUdata, series = "total")
+
+# # # # # # # # #  Poland  # # # # # # # # #
+
+PLdata <- hmd.mx(country = "POL", username = "mozesarpi11@gmail.com", password = "ob8YjY4_ji;5_K3H?hd_'dY@", label = "Poland")
+
+PLFemaleData <- StMoMoData(PLdata, series = "female")
+PLMaleData <- StMoMoData(PLdata, series = "male")
+PLTotalData <- StMoMoData(PLdata, series = "total")
+
+# # # # # # # # #  USA  # # # # # # # # #
+
+USdata <- hmd.mx(country = "USA", username = "mozesarpi11@gmail.com", password = "ob8YjY4_ji;5_K3H?hd_'dY@", label = "USA")
+
+USFemaleData <- StMoMoData(USdata, series = "female")
+USMaleData <- StMoMoData(USdata, series = "male")
+USTotalData <- StMoMoData(USdata, series = "total")
+
+# # # # # # # # #  UK  # # # # # # # # #
+
+UKdata <- hmd.mx(country = "GBR_NP", username = "mozesarpi11@gmail.com", password = "ob8YjY4_ji;5_K3H?hd_'dY@", label = "UK")
+
+UKFemaleData <- StMoMoData(UKdata, series = "female")
+UKMaleData <- StMoMoData(UKdata, series = "male")
+UKTotalData <- StMoMoData(UKdata, series = "total")
+
+# # # # # # # # #  Japan  # # # # # # # # #
+
+JPdata <- hmd.mx(country = "JPN", username = "mozesarpi11@gmail.com", password = "ob8YjY4_ji;5_K3H?hd_'dY@", label = "Japan")
+
+JPFemaleData <- StMoMoData(JPdata, series = "female")
+JPMaleData <- StMoMoData(JPdata, series = "male")
+JPTotalData <- StMoMoData(JPdata, series = "total")
+
+# # # # # # # # #  Australia  # # # # # # # # #
+
+AUdata <- hmd.mx(country = "AUS", username = "mozesarpi11@gmail.com", password = "ob8YjY4_ji;5_K3H?hd_'dY@", label = "Australia")
+
+AUFemaleData <- StMoMoData(AUdata, series = "female")
+AUMaleData <- StMoMoData(AUdata, series = "male")
+AUTotalData <- StMoMoData(AUdata, series = "total")
+
+# # # # # # # # #  Sweden  # # # # # # # # #
+
+SWdata <- hmd.mx(country = "SWE", username = "mozesarpi11@gmail.com", password = "ob8YjY4_ji;5_K3H?hd_'dY@", label = "Sweden")
+
+SWFemaleData <- StMoMoData(SWdata, series = "female")
+SWMaleData <- StMoMoData(SWdata, series = "male")
+SWTotalData <- StMoMoData(SWdata, series = "total")
+
+# # # # # # # # #  France  # # # # # # # # #
+
+FRdata <- hmd.mx(country = "FRATNP", username = "mozesarpi11@gmail.com", password = "ob8YjY4_ji;5_K3H?hd_'dY@", label = "France")
+
+FRFemaleData <- StMoMoData(FRdata, series = "female")
+FRMaleData <- StMoMoData(FRdata, series = "male")
+FRTotalData <- StMoMoData(FRdata, series = "total")

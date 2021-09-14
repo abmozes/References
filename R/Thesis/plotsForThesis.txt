@@ -1,0 +1,38 @@
+width <- 8
+height <- 8
+
+setEPS(width = width, height = height)
+postscript("HU-log_APC_parameters.eps")
+plot(log_APCfit, parametricbx = FALSE, nCol = 3, las = 1, cex.lab = 2)
+dev.off()
+
+setEPS(width = width, height = height)
+postscript("HU-log_CBD_parameters.eps")
+plot(log_CBDfit, parametricbx = FALSE, nCol = 2, las = 1, cex.lab = 1.2)
+dev.off()
+
+setEPS(width = width, height = height)
+postscript("HU-log_PLAT_parameters.eps")
+plot(log_PLATfit, parametricbx = FALSE, nCol = 2, las = 1, cex.lab = 1.2)
+dev.off()
+
+
+setEPS(width = width, height = height)
+postscript("HU-logit_LCres-cm.eps")
+plot(logit_LCres, type = "colourmap", reslim = c(-3.5, 3.5), main = "logit-LC", las = 1, cex.lab = 1.5)
+dev.off()
+
+setEPS(width = width, height = height)
+postscript("HU-logit_RHres-cm.eps")
+plot(logit_RHres, type = "colourmap", reslim = c(-3.5, 3.5), main = "logit-RH", las = 1, cex.lab = 1.5)
+dev.off()
+
+setEPS(width = width, height = height)
+postscript("HU-cloglog_LCres-cm.eps")
+plot(cloglog_LCres, type = "colourmap", reslim = c(-3.5, 3.5), main = "cloglog-LC", las = 1, cex.lab = 1.5)
+dev.off()
+
+setEPS(width = width, height = height)
+postscript("HU-cloglog_RHres-cm.eps")
+plot(cloglog_RHres, type = "colourmap", reslim = c(-3.5, 3.5), main = "cloglog-RH", las = 1, cex.lab = 1.5)
+dev.off()

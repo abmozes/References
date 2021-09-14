@@ -1,0 +1,91 @@
+# Az ábrákhoz (HU)
+#
+# logPoissonGompertz_50_90_1960_HU_M
+# logPoissonGompertz_50_90_2017_HU_T
+# logitBinomialGompertz_50_90_1960_HU_M
+# logitBinomialGompertz_50_90_2017_HU_T
+#
+# logPoissonGompertz(50, 90, 1960, "HU", "M")
+# logPoissonGompertz(50, 90, 2017, "HU", "T")
+# logitBinomialGompertz(50, 90, 1960, "HU", "M")
+# logitBinomialGompertz(50, 90, 2017, "HU", "T")
+
+### Log Poisson Gompertz model
+#Death <- HU_deaths_table_M[51:91, 'X1960']
+#Off <- log(HU_exposure_table_M[51:91, 'X1960'])
+#X <- t(rbind(t(replicate(41, 1)), t(c(50:90))))
+#glm(Death ~ -1 + X + offset(Off), family = poisson(link = "log")) 
+
+logPoissonGompertz <- function(firstAge, lastAge, year, country, tableType) {
+    Death <- eval(parse(text = str_c(country, "_deaths_table_", tableType, "[", (firstAge + 1), ":", (lastAge + 1), ", 'X", year, "']" )))
+    Off <- eval(parse(text = str_c("log(", country, "_exposure_table_", tableType, "[", (firstAge + 1), ":", (lastAge + 1), ", 'X", year, "'])")))
+    X <- eval(parse(text = str_c("t(rbind(t(replicate(", (lastAge - firstAge + 1), ", 1)), t(c(", firstAge, ":", lastAge, "))))")))
+    results <- glm(Death ~ -1 + X + offset(Off), family = poisson(link = "log"))
+    warns <- warnings()
+    theta <- matrix(unlist(results["coefficients"]), ncol = 1)
+    eta <- Off + X %*% theta
+    Életkorok <- eval(parse(text = str_c("c(", firstAge, ":", lastAge, ")")))
+    q <- eval(parse(text = str_c(country, "_mortality_rates_table_", tableType, "[", (firstAge + 1), ":", (lastAge + 1), ", 'X", year, "']" )))
+    mu <- -log(1 - q)
+
+    plot(Életkorok, log(mu), ylab = "log(μ)", las = 1, cex.lab = 1.5)
+    lines(Életkorok, X %*% theta)
+    legend("topleft", c("Megfigyelések","Illesztés"), pch = c("o","—"))
+
+    returnList <- list(Death, Off, X, results, warns, theta, eta, q, mu)
+    names(returnList) <- c("Death", "Off", "X", "results", "warns", "theta", "eta", "q", "mu")
+    #return(returnList)
+}
+
+### Logit binomial Gompertz model
+#Death <- HU_deaths_table_M[51:91, 'X1960']
+#Rate <- HU_death_rates_table_M[51:91, 'X1960']
+#Initial <- HU_exposure_table_M[51:91, 'X1960'] + 0.5 * HU_deaths_table_M[51:91, 'X1960']
+#glm(Rate ~ -1 + X, family = binomial(link = "logit"), weight = Initial) 
+
+logitBinomialGompertz <- function(firstAge, lastAge, year, country, tableType) {
+    Death <- eval(parse(text = str_c(country, "_deaths_table_", tableType, "[", (firstAge + 1), ":", (lastAge + 1), ", 'X", year, "']" )))
+    Rate <- eval(parse(text = str_c(country, "_death_rates_table_", tableType, "[", (firstAge + 1), ":", (lastAge + 1), ", 'X", year, "']" )))
+    Initial <- eval(parse(text = str_c(country, "_exposure_table_", tableType, "[", (firstAge + 1), ":", (lastAge + 1), ", 'X", year, "'] + 0.5 * ", 
+    country, "_deaths_table_", tableType, "[", (firstAge + 1), ":", (lastAge + 1), ", 'X", year, "']")))
+    X <- eval(parse(text = str_c("t(rbind(t(replicate(", (lastAge - firstAge + 1), ", 1)), t(c(", firstAge, ":", lastAge, "))))")))
+    results <- glm(Rate ~ -1 + X, family = binomial(link = "logit"), weight = Initial)
+    warns <- warnings()
+    theta <- matrix(unlist(results["coefficients"]), ncol = 1)
+    eta <- X %*% theta
+    Életkorok <- eval(parse(text = str_c("c(", firstAge, ":", lastAge, ")")))
+    q <- eval(parse(text = str_c(country, "_death_rates_table_", tableType, "[", (firstAge + 1), ":", (lastAge + 1), ", 'X", year, "']" )))
+
+    logit <- function(x) log(x/(1-x))
+
+    plot(Életkorok, logit(q), las = 1, cex.lab = 1.5)
+    lines(Életkorok, X %*% theta)
+    legend("topleft", c("Megfigyelések","Illesztés"), pch = c("o","—"))
+
+    returnList <- list(Death, X, results, warns, theta, eta, q)
+    names(returnList) <- c("Death", "X", "results", "warns", "theta", "eta", "q")
+    #return(returnList)
+}
+
+width <- 5
+height <- 5
+
+setEPS(width = width, height = height)
+postscript("logPoissonGompertz_50_90_1960_HU_M.eps")
+logPoissonGompertz(50, 90, 1960, "HU", "M")
+dev.off()
+
+setEPS(width = width, height = height)
+postscript("logPoissonGompertz_50_90_2017_HU_T.eps")
+logPoissonGompertz(50, 90, 2017, "HU", "T")
+dev.off()
+
+setEPS(width = width, height = height)
+postscript("logitBinomialGompertz_50_90_1960_HU_M.eps")
+logitBinomialGompertz(50, 90, 1960, "HU", "M")
+dev.off()
+
+setEPS(width = width, height = height)
+postscript("logitBinomialGompertz_50_90_2017_HU_T.eps")
+logitBinomialGompertz(50, 90, 2017, "HU", "T")
+dev.off()

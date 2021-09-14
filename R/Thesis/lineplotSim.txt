@@ -1,0 +1,23 @@
+lineplotSim <- function(Fit, Sim, ageToShow = 65, nLines = 20, qxt, qcols, name, hasCohort = TRUE){
+ifelse (hasCohort, par(mfrow = c(3, 1)), par(mfrow = c(2, 1)))
+
+mtext(name, outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+
+plot(Fit$years, Fit$kt[1, ], xlim = range(Fit$years,
+Sim$kt.s$years), ylim = range(Fit$kt, Sim$kt.s$sim[1, , 1:nLines]),
+type = "l", xlab = "year", ylab = "kt", main = "Period index")
+matlines(Sim$kt.s$years, Sim$kt.s$sim[1, , 1:nLines], type = "l", lty = 1)
+
+if (hasCohort) {
+plot(Fit$cohorts, Fit$gc, xlim = range(Fit$cohorts,
+Sim$gc.s$cohorts), ylim = range(Fit$gc, Sim$gc.s$sim[, 1:nLines],
+na.rm = TRUE), type = "l", xlab = "year", ylab = "kt",
+main = "Cohort index")
+matlines(Sim$gc.s$cohorts, Sim$gc.s$sim[, 1:nLines], type = "l", lty = 1)
+}
+
+plot(Fit$years, qxt[as.character(ageToShow), qcols], xlim = range(Fit$years, Sim$years),
+ylim = range(qxt[as.character(ageToShow), qcols], Sim$rates[as.character(ageToShow), , 1:nLines]), type = "l",
+xlab = "year", ylab = "rate", main = paste("Mortality rates at age", as.character(ageToShow)))
+matlines(Sim$years, Sim$rates[as.character(ageToShow), , 1:nLines], type = "l", lty = 1)
+}

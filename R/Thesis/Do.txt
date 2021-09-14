@@ -1,0 +1,596 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#                                                                 #
+#                             FUNCTION                            #
+#                                                                 #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+## This function runs StMoMo fittings and creates fitting plots,
+## residual plots (colourmap and scatter plots), information
+## criteria barplots, and returns deviances of each model (rows)
+## for each link functions (columns).
+
+# A main directory needed
+# Function will find or create "plots" subdir and a specific
+# folder in it for output plots, name based on the input
+
+mainDir <- "C:/Users/Asus/OneDrive/Szakdolgozat/Thesis"
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
+Do <- function(Data, firstAge, lastAge, firstYear, lastYear, forecastYears = 10, nsim = 500, nBoot = 1000, nLines = 20,
+stdImageW = 1280, stdImageH = 720, colourmapImageW = 1080, colourmapImageH = 1080, mainDir) {
+IniData <- central2initial(Data)
+ages.fit <- firstAge:lastAge
+years.fit <- firstYear:lastYear
+wxt <- genWeightMat(ages = ages.fit, years = years.fit, clip = 3)
+
+qxt <- Data[["Dxt"]] / Data[["Ext"]]
+firstcol <- which(colnames(qxt) == firstYear)
+lastcol <- which(colnames(qxt) == lastYear)
+qcols <- c(firstcol:lastcol)
+qcols2 <- c((lastcol + 1):(lastcol + forecastYears))
+
+# Creating a "plots" subdir and a specific folder
+# forecastYears have been taken out from naming (and is 10 by default) !!
+folderName <- paste(Data$label, Data$series, firstAge, lastAge, firstYear, lastYear, sep = "_")
+dir.create(file.path(mainDir, "plots"))
+dir.create(file.path(paste(mainDir, "/plots", sep = ""), folderName))
+plotDir <- paste(mainDir, "/plots/", folderName, sep = "")
+
+dev <- matrix(nrow = 7, ncol = 4)
+rownames(dev) <- c("LC", "RH", "APC", "CBD", "M6", "M7", "PLAT")
+colnames(dev) <- c("log", "logitP", "logit", "cloglog")
+
+
+# # # # # # # # #  Model fitting  # # # # # # # # #
+
+log_LCfit <- fit(log_LC, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+log_RHfit <- fit(log_RH, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt,
+                        start.ax = log_LCfit$ax, start.bx = log_LCfit$bx, start.kt = log_LCfit$kt)
+log_APCfit <- fit(log_APC, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+log_CBDfit <- fit(log_CBD, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+log_M6fit <- fit(log_M6, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+log_M7fit <- fit(log_M7, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+log_PLATfit <- fit(log_PLAT, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+
+logitP_LCfit <- fit(logitP_LC, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+logitP_RHfit <- fit(logitP_RH, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt,
+                        start.ax = logitP_LCfit$ax, start.bx = logitP_LCfit$bx, start.kt = logitP_LCfit$kt)
+logitP_APCfit <- fit(logitP_APC, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+logitP_CBDfit <- fit(logitP_CBD, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+logitP_M6fit <- fit(logitP_M6, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+logitP_M7fit <- fit(logitP_M7, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+logitP_PLATfit <- fit(logitP_PLAT, data = Data, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+
+logit_LCfit <- fit(logit_LC, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+logit_RHfit <- fit(logit_RH, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt,
+                        start.ax = logit_LCfit$ax, start.bx = logit_LCfit$bx, start.kt = logit_LCfit$kt)
+logit_APCfit <- fit(logit_APC, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+logit_CBDfit <- fit(logit_CBD, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+logit_M6fit <- fit(logit_M6, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+logit_M7fit <- fit(logit_M7, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+logit_PLATfit <- fit(logit_PLAT, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+
+cloglog_LCfit <- fit(cloglog_LC, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+cloglog_RHfit <- fit(cloglog_RH, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt,
+                        start.ax = cloglog_LCfit$ax, start.bx = cloglog_LCfit$bx, start.kt = cloglog_LCfit$kt)
+cloglog_APCfit <- fit(cloglog_APC, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+cloglog_CBDfit <- fit(cloglog_CBD, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+cloglog_M6fit <- fit(cloglog_M6, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+cloglog_M7fit <- fit(cloglog_M7, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+cloglog_PLATfit <- fit(cloglog_PLAT, data = IniData, ages.fit = ages.fit, years.fit = years.fit, wxt = wxt)
+
+# # # # # # # # #  Model fitting plots  # # # # # # # # #
+
+png(file = paste(plotDir, "/log_LCfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(log_LCfit, nCol = 3)
+mtext("log_LC", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/log_RHfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(log_RHfit, parametricbx = FALSE)
+mtext("log_RH", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/log_APCfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(log_APCfit, parametricbx = FALSE, nCol = 3)
+mtext("log_APC", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/log_CBDfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(log_CBDfit, parametricbx = FALSE)
+mtext("log_CBD", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/log_M6fit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(log_M6fit, parametricbx = FALSE)
+mtext("log_M6", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/log_M7fit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(log_M7fit, parametricbx = FALSE)
+mtext("log_M7", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/log_PLATfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(log_PLATfit, parametricbx = FALSE)
+mtext("log_PLAT", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+
+png(file = paste(plotDir, "/logitP_LCfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logitP_LCfit, nCol = 3)
+mtext("logitP_LC", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/logitP_RHfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logitP_RHfit, parametricbx = FALSE)
+mtext("logitP_RH", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/logitP_APCfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logitP_APCfit, parametricbx = FALSE, nCol = 3)
+mtext("logitP_APC", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/logitP_CBDfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logitP_CBDfit, parametricbx = FALSE)
+mtext("logitP_CBD", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/logitP_M6fit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logitP_M6fit, parametricbx = FALSE)
+mtext("logitP_M6", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/logitP_M7fit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logitP_M7fit, parametricbx = FALSE)
+mtext("logitP_M7", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/logitP_PLATfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logitP_PLATfit, parametricbx = FALSE)
+mtext("logitP_PLAT", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+
+png(file = paste(plotDir, "/logit_LCfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logit_LCfit, nCol = 3)
+mtext("logit_LC", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/logit_RHfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logit_RHfit, parametricbx = FALSE)
+mtext("logit_RH", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/logit_APCfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logit_APCfit, parametricbx = FALSE, nCol = 3)
+mtext("logit_APC", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/logit_CBDfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logit_CBDfit, parametricbx = FALSE)
+mtext("logit_CBD", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/logit_M6fit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logit_M6fit, parametricbx = FALSE)
+mtext("logit_M6", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/logit_M7fit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logit_M7fit, parametricbx = FALSE)
+mtext("logit_M7", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/logit_PLATfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(logit_PLATfit, parametricbx = FALSE)
+mtext("logit_PLAT", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+
+png(file = paste(plotDir, "/cloglog_LCfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(cloglog_LCfit, nCol = 3)
+mtext("cloglog_LC", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/cloglog_RHfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(cloglog_RHfit, parametricbx = FALSE)
+mtext("cloglog_RH", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/cloglog_APCfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(cloglog_APCfit, parametricbx = FALSE, nCol = 3)
+mtext("cloglog_APC", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/cloglog_CBDfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(cloglog_CBDfit, parametricbx = FALSE)
+mtext("cloglog_CBD", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/cloglog_M6fit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(cloglog_M6fit, parametricbx = FALSE)
+mtext("cloglog_M6", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/cloglog_M7fit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(cloglog_M7fit, parametricbx = FALSE)
+mtext("cloglog_M7", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+png(file = paste(plotDir, "/cloglog_PLATfit.png", sep = ""), width = stdImageW, height = stdImageH)
+plot(cloglog_PLATfit, parametricbx = FALSE)
+mtext("cloglog_PLAT", outer = TRUE, side = 3, line = -2, adj = 0.02, font = 2)
+dev.off()
+
+
+# # # # # # # # #  Goodness-of-fit analysis  # # # # # # # # #
+
+# # # # # # # # #  Residuals  # # # # # # # # #
+
+log_LCres <- residuals(log_LCfit)
+log_RHres <- residuals(log_RHfit)
+log_APCres <- residuals(log_APCfit)
+log_CBDres <- residuals(log_CBDfit)
+log_M6res <- residuals(log_M6fit)
+log_M7res <- residuals(log_M7fit)
+log_PLATres <- residuals(log_PLATfit)
+
+logitP_LCres <- residuals(logitP_LCfit)
+logitP_RHres <- residuals(logitP_RHfit)
+logitP_APCres <- residuals(logitP_APCfit)
+logitP_CBDres <- residuals(logitP_CBDfit)
+logitP_M6res <- residuals(logitP_M6fit)
+logitP_M7res <- residuals(logitP_M7fit)
+logitP_PLATres <- residuals(logitP_PLATfit)
+
+logit_LCres <- residuals(logit_LCfit)
+logit_RHres <- residuals(logit_RHfit)
+logit_APCres <- residuals(logit_APCfit)
+logit_CBDres <- residuals(logit_CBDfit)
+logit_M6res <- residuals(logit_M6fit)
+logit_M7res <- residuals(logit_M7fit)
+logit_PLATres <- residuals(logit_PLATfit)
+
+cloglog_LCres <- residuals(cloglog_LCfit)
+cloglog_RHres <- residuals(cloglog_RHfit)
+cloglog_APCres <- residuals(cloglog_APCfit)
+cloglog_CBDres <- residuals(cloglog_CBDfit)
+cloglog_M6res <- residuals(cloglog_M6fit)
+cloglog_M7res <- residuals(cloglog_M7fit)
+cloglog_PLATres <- residuals(cloglog_PLATfit)
+
+# # # # # # # # #  Residuals on colourmap  # # # # # # # # #
+
+png(file = paste(plotDir, "/log_LCres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_LCres, type = "colourmap", reslim = c(-3.5, 3.5), main = "log_LC")
+dev.off()
+png(file = paste(plotDir, "/log_RHres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_RHres, type = "colourmap", reslim = c(-3.5, 3.5), main = "log_RH")
+dev.off()
+png(file = paste(plotDir, "/log_APCres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_APCres, type = "colourmap", reslim = c(-3.5, 3.5), main = "log_APC")
+dev.off()
+png(file = paste(plotDir, "/log_CBDres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_CBDres, type = "colourmap", reslim = c(-3.5, 3.5), main = "log_CBD")
+dev.off()
+png(file = paste(plotDir, "/log_M6res-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_M6res, type = "colourmap", reslim = c(-3.5, 3.5), main = "log_M6")
+dev.off()
+png(file = paste(plotDir, "/log_M7res-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_M7res, type = "colourmap", reslim = c(-3.5, 3.5), main = "log_M7")
+dev.off()
+png(file = paste(plotDir, "/log_PLATres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_PLATres, type = "colourmap", reslim = c(-3.5, 3.5), main = "log_PLAT")
+dev.off()
+
+png(file = paste(plotDir, "/logitP_LCres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_LCres, type = "colourmap", reslim = c(-3.5, 3.5), main = "logitP_LC")
+dev.off()
+png(file = paste(plotDir, "/logitP_RHres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_RHres, type = "colourmap", reslim = c(-3.5, 3.5), main = "logitP_RH")
+dev.off()
+png(file = paste(plotDir, "/logitP_APCres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_APCres, type = "colourmap", reslim = c(-3.5, 3.5), main = "logitP_APC")
+dev.off()
+png(file = paste(plotDir, "/logitP_CBDres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_CBDres, type = "colourmap", reslim = c(-3.5, 3.5), main = "logitP_CBD")
+dev.off()
+png(file = paste(plotDir, "/logitP_M6res-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_M6res, type = "colourmap", reslim = c(-3.5, 3.5), main = "logitP_M6")
+dev.off()
+png(file = paste(plotDir, "/logitP_M7res-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_M7res, type = "colourmap", reslim = c(-3.5, 3.5), main = "logitP_M7")
+dev.off()
+png(file = paste(plotDir, "/logitP_PLATres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_PLATres, type = "colourmap", reslim = c(-3.5, 3.5), main = "logitP_PLAT")
+dev.off()
+
+png(file = paste(plotDir, "/logit_LCres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_LCres, type = "colourmap", reslim = c(-3.5, 3.5), main = "logit_LC")
+dev.off()
+png(file = paste(plotDir, "/logit_RHres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_RHres, type = "colourmap", reslim = c(-3.5, 3.5), main = "logit_RH")
+dev.off()
+png(file = paste(plotDir, "/logit_APCres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_APCres, type = "colourmap", reslim = c(-3.5, 3.5), main = "logit_APC")
+dev.off()
+png(file = paste(plotDir, "/logit_CBDres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_CBDres, type = "colourmap", reslim = c(-3.5, 3.5), main = "logit_CBD")
+dev.off()
+png(file = paste(plotDir, "/logit_M6res-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_M6res, type = "colourmap", reslim = c(-3.5, 3.5), main = "logit_M6")
+dev.off()
+png(file = paste(plotDir, "/logit_M7res-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_M7res, type = "colourmap", reslim = c(-3.5, 3.5), main = "logit_M7")
+dev.off()
+png(file = paste(plotDir, "/logit_PLATres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_PLATres, type = "colourmap", reslim = c(-3.5, 3.5), main = "logit_PLAT")
+dev.off()
+
+png(file = paste(plotDir, "/cloglog_LCres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_LCres, type = "colourmap", reslim = c(-3.5, 3.5), main = "cloglog_LC")
+dev.off()
+png(file = paste(plotDir, "/cloglog_RHres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_RHres, type = "colourmap", reslim = c(-3.5, 3.5), main = "cloglog_RH")
+dev.off()
+png(file = paste(plotDir, "/cloglog_APCres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_APCres, type = "colourmap", reslim = c(-3.5, 3.5), main = "cloglog_APC")
+dev.off()
+png(file = paste(plotDir, "/cloglog_CBDres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_CBDres, type = "colourmap", reslim = c(-3.5, 3.5), main = "cloglog_CBD")
+dev.off()
+png(file = paste(plotDir, "/cloglog_M6res-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_M6res, type = "colourmap", reslim = c(-3.5, 3.5), main = "cloglog_M6")
+dev.off()
+png(file = paste(plotDir, "/cloglog_M7res-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_M7res, type = "colourmap", reslim = c(-3.5, 3.5), main = "cloglog_M7")
+dev.off()
+png(file = paste(plotDir, "/cloglog_PLATres-cm.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_PLATres, type = "colourmap", reslim = c(-3.5, 3.5), main = "cloglog_PLAT")
+dev.off()
+
+# # # # # # # # #  Residuals on scatter plot  # # # # # # # # #
+
+png(file = paste(plotDir, "/log_LCres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_LCres, type = "scatter", reslim = c(-3.5, 3.5), main = "log_LC")
+dev.off()
+png(file = paste(plotDir, "/log_RHres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_RHres, type = "scatter", reslim = c(-3.5, 3.5), main = "log_RH")
+dev.off()
+png(file = paste(plotDir, "/log_APCres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_APCres, type = "scatter", reslim = c(-3.5, 3.5), main = "log_APC")
+dev.off()
+png(file = paste(plotDir, "/log_CBDres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_CBDres, type = "scatter", reslim = c(-3.5, 3.5), main = "log_CBD")
+dev.off()
+png(file = paste(plotDir, "/log_M6res-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_M6res, type = "scatter", reslim = c(-3.5, 3.5), main = "log_M6")
+dev.off()
+png(file = paste(plotDir, "/log_M7res-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_M7res, type = "scatter", reslim = c(-3.5, 3.5), main = "log_M7")
+dev.off()
+png(file = paste(plotDir, "/log_PLATres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(log_PLATres, type = "scatter", reslim = c(-3.5, 3.5), main = "log_PLAT")
+dev.off()
+
+png(file = paste(plotDir, "/logitP_LCres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_LCres, type = "scatter", reslim = c(-3.5, 3.5), main = "logitP_LC")
+dev.off()
+png(file = paste(plotDir, "/logitP_RHres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_RHres, type = "scatter", reslim = c(-3.5, 3.5), main = "logitP_RH")
+dev.off()
+png(file = paste(plotDir, "/logitP_APCres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_APCres, type = "scatter", reslim = c(-3.5, 3.5), main = "logitP_APC")
+dev.off()
+png(file = paste(plotDir, "/logitP_CBDres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_CBDres, type = "scatter", reslim = c(-3.5, 3.5), main = "logitP_CBD")
+dev.off()
+png(file = paste(plotDir, "/logitP_M6res-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_M6res, type = "scatter", reslim = c(-3.5, 3.5), main = "logitP_M6")
+dev.off()
+png(file = paste(plotDir, "/logitP_M7res-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_M7res, type = "scatter", reslim = c(-3.5, 3.5), main = "logitP_M7")
+dev.off()
+png(file = paste(plotDir, "/logitP_PLATres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logitP_PLATres, type = "scatter", reslim = c(-3.5, 3.5), main = "logitP_PLAT")
+dev.off()
+
+png(file = paste(plotDir, "/logit_LCres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_LCres, type = "scatter", reslim = c(-3.5, 3.5), main = "logit_LC")
+dev.off()
+png(file = paste(plotDir, "/logit_RHres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_RHres, type = "scatter", reslim = c(-3.5, 3.5), main = "logit_RH")
+dev.off()
+png(file = paste(plotDir, "/logit_APCres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_APCres, type = "scatter", reslim = c(-3.5, 3.5), main = "logit_APC")
+dev.off()
+png(file = paste(plotDir, "/logit_CBDres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_CBDres, type = "scatter", reslim = c(-3.5, 3.5), main = "logit_CBD")
+dev.off()
+png(file = paste(plotDir, "/logit_M6res-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_M6res, type = "scatter", reslim = c(-3.5, 3.5), main = "logit_M6")
+dev.off()
+png(file = paste(plotDir, "/logit_M7res-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_M7res, type = "scatter", reslim = c(-3.5, 3.5), main = "logit_M7")
+dev.off()
+png(file = paste(plotDir, "/logit_PLATres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(logit_PLATres, type = "scatter", reslim = c(-3.5, 3.5), main = "logit_PLAT")
+dev.off()
+
+png(file = paste(plotDir, "/cloglog_LCres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_LCres, type = "scatter", reslim = c(-3.5, 3.5), main = "cloglog_LC")
+dev.off()
+png(file = paste(plotDir, "/cloglog_RHres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_RHres, type = "scatter", reslim = c(-3.5, 3.5), main = "cloglog_RH")
+dev.off()
+png(file = paste(plotDir, "/cloglog_APCres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_APCres, type = "scatter", reslim = c(-3.5, 3.5), main = "cloglog_APC")
+dev.off()
+png(file = paste(plotDir, "/cloglog_CBDres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_CBDres, type = "scatter", reslim = c(-3.5, 3.5), main = "cloglog_CBD")
+dev.off()
+png(file = paste(plotDir, "/cloglog_M6res-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_M6res, type = "scatter", reslim = c(-3.5, 3.5), main = "cloglog_M6")
+dev.off()
+png(file = paste(plotDir, "/cloglog_M7res-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_M7res, type = "scatter", reslim = c(-3.5, 3.5), main = "cloglog_M7")
+dev.off()
+png(file = paste(plotDir, "/cloglog_PLATres-sp.png", sep = ""), width = colourmapImageW, height = colourmapImageH)
+plot(cloglog_PLATres, type = "scatter", reslim = c(-3.5, 3.5), main = "cloglog_PLAT")
+dev.off()
+
+# # # # # # # # #  Information criteria comparsions  # # # # # # # # #
+
+log_ICcomparsion <- matrix(nrow = 3, ncol = 7)
+rownames(log_ICcomparsion) <- c("parameters", "AIC", "BIC")
+colnames(log_ICcomparsion) <- c("log_LC", "log_RH", "log_APC", "log_CBD", "log_M6", "log_M7", "log_PLAT")
+
+log_ICcomparsion[1, 1] = log_LCfit$npar
+log_ICcomparsion[1, 2] = log_RHfit$npar
+log_ICcomparsion[1, 3] = log_APCfit$npar
+log_ICcomparsion[1, 4] = log_CBDfit$npar
+log_ICcomparsion[1, 5] = log_M6fit$npar
+log_ICcomparsion[1, 6] = log_M7fit$npar
+log_ICcomparsion[1, 7] = log_PLATfit$npar
+
+log_ICcomparsion[2, 1] = AIC(log_LCfit)
+log_ICcomparsion[2, 2] = AIC(log_RHfit)
+log_ICcomparsion[2, 3] = AIC(log_APCfit)
+log_ICcomparsion[2, 4] = AIC(log_CBDfit)
+log_ICcomparsion[2, 5] = AIC(log_M6fit)
+log_ICcomparsion[2, 6] = AIC(log_M7fit)
+log_ICcomparsion[2, 7] = AIC(log_PLATfit)
+
+log_ICcomparsion[3, 1] = BIC(log_LCfit)
+log_ICcomparsion[3, 2] = BIC(log_RHfit)
+log_ICcomparsion[3, 3] = BIC(log_APCfit)
+log_ICcomparsion[3, 4] = BIC(log_CBDfit)
+log_ICcomparsion[3, 5] = BIC(log_M6fit)
+log_ICcomparsion[3, 6] = BIC(log_M7fit)
+log_ICcomparsion[3, 7] = BIC(log_PLATfit)
+
+logitP_ICcomparsion <- matrix(nrow = 3, ncol = 7)
+rownames(logitP_ICcomparsion) <- c("parameters", "AIC", "BIC")
+colnames(logitP_ICcomparsion) <- c("logitP_LC", "logitP_RH", "logitP_APC", "logitP_CBD", "logitP_M6", "logitP_M7", "logitP_PLAT")
+
+logitP_ICcomparsion[1, 1] = logitP_LCfit$npar
+logitP_ICcomparsion[1, 2] = logitP_RHfit$npar
+logitP_ICcomparsion[1, 3] = logitP_APCfit$npar
+logitP_ICcomparsion[1, 4] = logitP_CBDfit$npar
+logitP_ICcomparsion[1, 5] = logitP_M6fit$npar
+logitP_ICcomparsion[1, 6] = logitP_M7fit$npar
+logitP_ICcomparsion[1, 7] = logitP_PLATfit$npar
+
+logitP_ICcomparsion[2, 1] = AIC(logitP_LCfit)
+logitP_ICcomparsion[2, 2] = AIC(logitP_RHfit)
+logitP_ICcomparsion[2, 3] = AIC(logitP_APCfit)
+logitP_ICcomparsion[2, 4] = AIC(logitP_CBDfit)
+logitP_ICcomparsion[2, 5] = AIC(logitP_M6fit)
+logitP_ICcomparsion[2, 6] = AIC(logitP_M7fit)
+logitP_ICcomparsion[2, 7] = AIC(logitP_PLATfit)
+
+logitP_ICcomparsion[3, 1] = BIC(logitP_LCfit)
+logitP_ICcomparsion[3, 2] = BIC(logitP_RHfit)
+logitP_ICcomparsion[3, 3] = BIC(logitP_APCfit)
+logitP_ICcomparsion[3, 4] = BIC(logitP_CBDfit)
+logitP_ICcomparsion[3, 5] = BIC(logitP_M6fit)
+logitP_ICcomparsion[3, 6] = BIC(logitP_M7fit)
+logitP_ICcomparsion[3, 7] = BIC(logitP_PLATfit)
+
+logit_ICcomparsion <- matrix(nrow = 3, ncol = 7)
+rownames(logit_ICcomparsion) <- c("parameters", "AIC", "BIC")
+colnames(logit_ICcomparsion) <- c("logit_LC", "logit_RH", "logit_APC", "logit_CBD", "logit_M6", "logit_M7", "logit_PLAT")
+
+logit_ICcomparsion[1, 1] = logit_LCfit$npar
+logit_ICcomparsion[1, 2] = logit_RHfit$npar
+logit_ICcomparsion[1, 3] = logit_APCfit$npar
+logit_ICcomparsion[1, 4] = logit_CBDfit$npar
+logit_ICcomparsion[1, 5] = logit_M6fit$npar
+logit_ICcomparsion[1, 6] = logit_M7fit$npar
+logit_ICcomparsion[1, 7] = logit_PLATfit$npar
+
+logit_ICcomparsion[2, 1] = AIC(logit_LCfit)
+logit_ICcomparsion[2, 2] = AIC(logit_RHfit)
+logit_ICcomparsion[2, 3] = AIC(logit_APCfit)
+logit_ICcomparsion[2, 4] = AIC(logit_CBDfit)
+logit_ICcomparsion[2, 5] = AIC(logit_M6fit)
+logit_ICcomparsion[2, 6] = AIC(logit_M7fit)
+logit_ICcomparsion[2, 7] = AIC(logit_PLATfit)
+
+logit_ICcomparsion[3, 1] = BIC(logit_LCfit)
+logit_ICcomparsion[3, 2] = BIC(logit_RHfit)
+logit_ICcomparsion[3, 3] = BIC(logit_APCfit)
+logit_ICcomparsion[3, 4] = BIC(logit_CBDfit)
+logit_ICcomparsion[3, 5] = BIC(logit_M6fit)
+logit_ICcomparsion[3, 6] = BIC(logit_M7fit)
+logit_ICcomparsion[3, 7] = BIC(logit_PLATfit)
+
+cloglog_ICcomparsion <- matrix(nrow = 3, ncol = 7)
+rownames(cloglog_ICcomparsion) <- c("parameters", "AIC", "BIC")
+colnames(cloglog_ICcomparsion) <- c("cloglog_LC", "cloglog_RH", "cloglog_APC", "cloglog_CBD", "cloglog_M6", "cloglog_M7", "cloglog_PLAT")
+
+cloglog_ICcomparsion[1, 1] = cloglog_LCfit$npar
+cloglog_ICcomparsion[1, 2] = cloglog_RHfit$npar
+cloglog_ICcomparsion[1, 3] = cloglog_APCfit$npar
+cloglog_ICcomparsion[1, 4] = cloglog_CBDfit$npar
+cloglog_ICcomparsion[1, 5] = cloglog_M6fit$npar
+cloglog_ICcomparsion[1, 6] = cloglog_M7fit$npar
+cloglog_ICcomparsion[1, 7] = cloglog_PLATfit$npar
+
+cloglog_ICcomparsion[2, 1] = AIC(cloglog_LCfit)
+cloglog_ICcomparsion[2, 2] = AIC(cloglog_RHfit)
+cloglog_ICcomparsion[2, 3] = AIC(cloglog_APCfit)
+cloglog_ICcomparsion[2, 4] = AIC(cloglog_CBDfit)
+cloglog_ICcomparsion[2, 5] = AIC(cloglog_M6fit)
+cloglog_ICcomparsion[2, 6] = AIC(cloglog_M7fit)
+cloglog_ICcomparsion[2, 7] = AIC(cloglog_PLATfit)
+
+cloglog_ICcomparsion[3, 1] = BIC(cloglog_LCfit)
+cloglog_ICcomparsion[3, 2] = BIC(cloglog_RHfit)
+cloglog_ICcomparsion[3, 3] = BIC(cloglog_APCfit)
+cloglog_ICcomparsion[3, 4] = BIC(cloglog_CBDfit)
+cloglog_ICcomparsion[3, 5] = BIC(cloglog_M6fit)
+cloglog_ICcomparsion[3, 6] = BIC(cloglog_M7fit)
+cloglog_ICcomparsion[3, 7] = BIC(cloglog_PLATfit)
+
+# # # # # # # # #  Log-Poi information criteria plot  # # # # # # # # #
+
+png(file = paste(plotDir, "/log_ICcomparsion.png", sep = ""), width = stdImageW, height = stdImageH)
+bp <- barplot(log_ICcomparsion[2:3, ], beside = TRUE,
+ylim = c(0, max(log_ICcomparsion[2:3, ]) * 1.1))
+text(bp , log_ICcomparsion[2:3, ] + 500, labels = round(log_ICcomparsion[2:3, ], digits = 0))
+dev.off()
+
+png(file = paste(plotDir, "/logitP_ICcomparsion.png", sep = ""), width = stdImageW, height = stdImageH)
+bp <- barplot(logitP_ICcomparsion[2:3, ], beside = TRUE,
+ylim = c(0, max(logitP_ICcomparsion[2:3, ]) * 1.1))
+text(bp , logitP_ICcomparsion[2:3, ] + 500, labels = round(logitP_ICcomparsion[2:3, ], digits = 0))
+dev.off()
+
+png(file = paste(plotDir, "/logit_ICcomparsion.png", sep = ""), width = stdImageW, height = stdImageH)
+bp <- barplot(logit_ICcomparsion[2:3, ], beside = TRUE,
+ylim = c(0, max(logit_ICcomparsion[2:3, ]) * 1.1))
+text(bp , logit_ICcomparsion[2:3, ] + 500, labels = round(logit_ICcomparsion[2:3, ], digits = 0))
+dev.off()
+
+png(file = paste(plotDir, "/cloglog_ICcomparsion.png", sep = ""), width = stdImageW, height = stdImageH)
+bp <- barplot(cloglog_ICcomparsion[2:3, ], beside = TRUE,
+ylim = c(0, max(cloglog_ICcomparsion[2:3, ]) * 1.1))
+text(bp , cloglog_ICcomparsion[2:3, ] + 500, labels = round(cloglog_ICcomparsion[2:3, ], digits = 0))
+dev.off()
+
+# # # # # # # # #  Deviances  # # # # # # # # #
+
+dev[1, 1] = log_LCfit$deviance
+dev[2, 1] = log_RHfit$deviance
+dev[3, 1] = log_APCfit$deviance
+dev[4, 1] = log_CBDfit$deviance
+dev[5, 1] = log_M6fit$deviance
+dev[6, 1] = log_M7fit$deviance
+dev[7, 1] = log_PLATfit$deviance
+
+dev[1, 2] = logitP_LCfit$deviance
+dev[2, 2] = logitP_RHfit$deviance
+dev[3, 2] = logitP_APCfit$deviance
+dev[4, 2] = logitP_CBDfit$deviance
+dev[5, 2] = logitP_M6fit$deviance
+dev[6, 2] = logitP_M7fit$deviance
+dev[7, 2] = logitP_PLATfit$deviance
+
+dev[1, 3] = logit_LCfit$deviance
+dev[2, 3] = logit_RHfit$deviance
+dev[3, 3] = logit_APCfit$deviance
+dev[4, 3] = logit_CBDfit$deviance
+dev[5, 3] = logit_M6fit$deviance
+dev[6, 3] = logit_M7fit$deviance
+dev[7, 3] = logit_PLATfit$deviance
+
+dev[1, 4] = cloglog_LCfit$deviance
+dev[2, 4] = cloglog_RHfit$deviance
+dev[3, 4] = cloglog_APCfit$deviance
+dev[4, 4] = cloglog_CBDfit$deviance
+dev[5, 4] = cloglog_M6fit$deviance
+dev[6, 4] = cloglog_M7fit$deviance
+dev[7, 4] = cloglog_PLATfit$deviance
+
+return(round(dev))
+
+}
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #

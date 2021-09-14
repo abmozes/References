@@ -1,0 +1,14 @@
+fanplotSim <- function(Fit, Sim, name){
+probs = c(2.5, 10, 25, 50, 75, 90, 97.5)
+matplot(Fit$years, t(qxt[c("65", "75", "85"), qcols]),
+xlim = c(firstYear, lastYear + forecastYears), ylim = c(0.01, 0.2), pch = 20, col = "black",
+log = "y", xlab = "year", ylab = "mortality rate (log scale)", main = name)
+fan(t(Sim$rates["65", , ]), start = lastYear + 1, probs = probs, n.fan = 4,
+fan.col = colorRampPalette(c("black", "white")), ln = NULL)
+fan(t(Sim$rates["75", , ]), start = lastYear + 1, probs = probs, n.fan = 4,
+fan.col = colorRampPalette(c("red", "white")), ln = NULL)
+fan(t(Sim$rates["85", , ]), start = lastYear + 1, probs = probs, n.fan = 4,
+fan.col = colorRampPalette(c("blue", "white")), ln = NULL)
+text(firstYear, qxt[c("65", "75", "85"), qcols[10]],
+labels = c("x = 65", "x = 75", "x = 85"))
+}

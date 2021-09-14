@@ -1,0 +1,30 @@
+### Main code of comparsion for my thesis (my intervals)
+
+inputs <- c()
+
+# # # # # # # # #  Hungary  # # # # # # # # #
+
+dev_HU_total_65_90_1998_2017 <- Do(HUTotalData, 65, 90, 1998, 2017, mainDir = mainDir)
+
+# # # # # # # # #  Poland  # # # # # # # # #
+
+dev_PL_total_65_90_1998_2017 <- Do(PLTotalData, 65, 90, 1998, 2017, mainDir = mainDir)
+
+# # # # List of inputs # # # #
+
+inputs[1] <- "dev_HU_total_65_90_1998_2017"
+inputs[2] <- "dev_PL_total_65_90_1998_2017"
+
+# # # # # # # # #  Export to csv  # # # # # # # # #
+
+Dev <- list(
+eval(parse(text = inputs[1])),
+eval(parse(text = inputs[2]))
+)
+names(Dev) <- c(
+inputs[1],
+inputs[2]
+)
+
+dir.create(file.path(mainDir, "output"))
+write.csv(Dev, paste(mainDir, "/output/myIntervals.csv", sep = ""), row.names = TRUE)

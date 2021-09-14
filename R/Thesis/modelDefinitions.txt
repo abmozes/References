@@ -1,0 +1,60 @@
+# # # # # # # # #  Definitions  # # # # # # # # #
+
+log_LC <- lc(link = "log")
+logit_LC <- lc(link = "logit")
+logitP_LC <- lc(link = "logitP")
+cloglog_LC <- lc(link = "cloglog")
+
+log_RH <- rh(link = "log", cohortAgeFun = "1", approxConst = TRUE)
+logit_RH <- rh(link = "logit", cohortAgeFun = "1", approxConst = TRUE)
+logitP_RH <- rh(link = "logitP", cohortAgeFun = "1", approxConst = TRUE)
+cloglog_RH <- rh(link = "cloglog", cohortAgeFun = "1", approxConst = TRUE)
+
+log_APC <- apc(link = "log")
+logit_APC <- apc(link = "logit")
+logitP_APC <- apc(link = "logitP")
+cloglog_APC <- apc(link = "cloglog")
+
+f2 <- function(x, ages) x - mean(ages)
+log_CBD <- StMoMo(link = "log", staticAgeFun = FALSE, periodAgeFun = c("1", f2))
+logit_CBD <- StMoMo(link = "logit", staticAgeFun = FALSE, periodAgeFun = c("1", f2))
+logitP_CBD <- StMoMo(link = "logitP", staticAgeFun = FALSE, periodAgeFun = c("1", f2))
+cloglog_CBD <- StMoMo(link = "cloglog", staticAgeFun = FALSE, periodAgeFun = c("1", f2))
+
+log_M6 <- m6(link = "log")
+logit_M6 <- m6(link = "logit")
+logitP_M6 <- m6(link = "logitP")
+cloglog_M6 <- m6(link = "cloglog")
+
+log_M7 <- m7(link = "log")
+logit_M7 <- m7(link = "logit")
+logitP_M7 <- m7(link = "logitP")
+cloglog_M7 <- m7(link = "cloglog")
+
+f2 <- function(x, ages) mean(ages) - x
+constPlat <- function(ax, bx, kt, b0x, gc, wxt, ages){
+nYears <- dim(wxt)[2]
+x <- ages
+t <- 1:nYears
+c <- (1 - tail(ages, 1)):(nYears - ages[1])
+xbar <- mean(x)
+phiReg <- lm(gc ~ 1 + c + I(c ^ 2), na.action = na.omit)
+phi <- coef(phiReg)
+gc <- gc - phi[1] - phi[2] * c - phi[3] * c ^ 2
+kt[2, ] <- kt[2, ] + 2 * phi[3] * t
+kt[1, ] <- kt[1, ] + phi[2] * t + phi[3] * (t ^ 2 - 2 * xbar * t)
+ax <- ax + phi[1] - phi[2] * x + phi[3] * x ^ 2
+ci <- rowMeans(kt, na.rm = TRUE)
+ax <- ax + ci[1] + ci[2] * (xbar - x)
+kt[1, ] <- kt[1, ] - ci[1]
+kt[2, ] <- kt[2, ] - ci[2]
+list(ax = ax, bx = bx, kt = kt, b0x = b0x, gc = gc)
+}
+log_PLAT <- StMoMo(link = "log", staticAgeFun = TRUE,
+periodAgeFun = c("1", f2), cohortAgeFun = "1", constFun = constPlat)
+logit_PLAT <- StMoMo(link = "logit", staticAgeFun = TRUE,
+periodAgeFun = c("1", f2), cohortAgeFun = "1", constFun = constPlat)
+logitP_PLAT <- StMoMo(link = "logitP", staticAgeFun = TRUE,
+periodAgeFun = c("1", f2), cohortAgeFun = "1", constFun = constPlat)
+cloglog_PLAT <- StMoMo(link = "cloglog", staticAgeFun = TRUE,
+periodAgeFun = c("1", f2), cohortAgeFun = "1", constFun = constPlat)
