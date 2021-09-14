@@ -1,0 +1,4 @@
+SELECT Year([card_events]![modifydate]) AS [Year], Month([card_events]![modifydate]) AS [Month], Day([card_events]![modifydate]) AS [Day], Sum([card_events]![new_balance]-[card_events]![last_balance]) AS Diff
+FROM cards INNER JOIN card_events ON cards.card_id = card_events.card_id
+WHERE (((card_events.customer_id)>3) AND ((cards.ct_id)<>4))
+GROUP BY Year([card_events]![modifydate]), Month([card_events]![modifydate]), Day([card_events]![modifydate]);
