@@ -1,0 +1,20 @@
+// Naplózás egy sorban függvény használatával
+function myLog(place, product, event, spLak, spKab, suLak, suKab, seller, price) {
+  var spreadsheet = SpreadsheetApp.getActive();
+  sheet = spreadsheet.getSheetByName('Eseménynapló (nem szerkeszthető)');
+  data = sheet.getDataRange().getValues();
+  row = 0;
+  while ( data[row] && data[row][0] !== "" ) {row++;}
+  sheet.getRange(row + 1, data[0].indexOf("Időbélyeg") + 1).setValue(Utilities.formatDate(new Date(), "GMT+1", "yyyy. MM. dd. HH:mm:ss"));
+  sheet.getRange(row + 1, data[0].indexOf("Hely") + 1).setValue(place);
+  sheet.getRange(row + 1, data[0].indexOf("Termék") + 1).setValue(product);
+  sheet.getRange(row + 1, data[0].indexOf("Esemény") + 1).setValue(event);
+  sheet.getRange(row + 1, data[0].indexOf("Frissített lakossági készlet Sárospatak") + 1).setValue(spLak);
+  sheet.getRange(row + 1, data[0].indexOf("Frissített kabin készlet Sárospatak") + 1).setValue(spKab);
+  sheet.getRange(row + 1, data[0].indexOf("Frissített lakossági készlet Sátoraljaújhely") + 1).setValue(suLak);
+  sheet.getRange(row + 1, data[0].indexOf("Frissített kabin készlet Sátoraljaújhely") + 1).setValue(suKab);
+  sheet.getRange(row + 1, data[0].indexOf("Eladta") + 1).setValue(seller);
+  sheet.getRange(row + 1, data[0].indexOf("Ár") + 1).setValue(price);
+  
+  //EsemenynaploMentese();
+}
