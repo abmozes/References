@@ -1,0 +1,21 @@
+bibentry(bibtype = "Article",
+  title        = "{StMoMo}: An {R} Package for Stochastic Mortality Modeling",
+  author       = c(person(given = c("Andr\\'es", "M."),
+                          family = "Villegas",
+                          email = "a.villegas@unsw.edu.au"),
+                   person(given = c("Vladimir", "K."),
+                          family = "Kaishev",
+                          email = "Vladimir.Kaishev.1@city.ac.uk"),
+                   person(given = "Pietro",
+                          family = "Millossovich",
+                          email = "Pietro.Millossovich.1@city.ac.uk")),
+  journal      = "Journal of Statistical Software",
+  year         = "2018",
+  volume       = "84",
+  number       = "3",
+  pages        = "1--38",
+  doi          = "10.18637/jss.v084.i03",
+
+  header       = "To cite StMoMo in publications use:"
+)
+
